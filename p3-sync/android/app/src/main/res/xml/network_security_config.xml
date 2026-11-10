@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sumber: Modul Praktikum P1, Langkah 4. Izin cleartext HANYA untuk 10.0.2.2 (host dari emulator).
+     Dicabut di Praktik 4a. -->
+<network-security-config>
+  <domain-config cleartextTrafficPermitted="true">
+    <domain includeSubdomains="false">10.0.2.2</domain>
+  </domain-config>
+</network-security-config>

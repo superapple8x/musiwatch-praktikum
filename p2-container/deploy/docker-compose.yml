@@ -1,0 +1,26 @@
+# Sumber: Modul Praktikum P2, Langkah 3.
+# TAMBAHAN: `build` agar image dibangun otomatis bila belum ada.
+services:
+  db:
+    image: postgres:16-alpine   # bila pindah ke postgres:18: mount volume ke /var/lib/postgresql
+    environment:
+      POSTGRES_DB: musiwatch
+      POSTGRES_USER: musiwatch
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?isi DB_PASSWORD di file .env}
+    volumes: [dbdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U musiwatch -d musiwatch"]
+      interval: 5s
+      retries: 10
+  api:
+    image: musiwatch/api:0.2.0
+    build: { context: ../api }
+    environment:
+      DATABASE_URL: postgresql://musiwatch:${DB_PASSWORD}@db:5432/musiwatch
+    ports: ["8000:8000"]
+    depends_on:
+      db: { condition: service_healthy }
+    deploy:
+      resources: { limits: { cpus: "0.5", memory: 256M } }
+volumes:
+  dbdata:

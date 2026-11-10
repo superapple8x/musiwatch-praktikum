@@ -1,0 +1,8 @@
+# TAMBAHAN P5: kode di modul memakai impor bergaya `import json, os, time` (aturan E401),
+# yang membuat `ruff check` di CI gagal. Pilihan: perbaiki gaya impor, atau abaikan E401 seperti di sini.
+# Revisi 2: himpunan aturan ditulis eksplisit. Rilis ruff yang lebih baru mengaktifkan lebih banyak aturan
+# secara default, sehingga pembaruan ruff (mis. lewat Dependabot) tidak boleh diam-diam membuat CI merah.
+line-length = 120
+[lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E401"]

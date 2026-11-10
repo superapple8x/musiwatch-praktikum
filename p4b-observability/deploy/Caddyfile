@@ -1,0 +1,9 @@
+# Sumber: Modul Praktikum P4a, Langkah 4.
+# PERUBAHAN dari modul: alamat situs ":8443" (bukan "api.musiwatch.test:8443") agar emulator yang
+# memanggil https://10.0.2.2:8443 juga dilayani. Sertifikat harus memuat 10.0.2.2 (lihat gen_certs.sh).
+:8443 {
+    tls /certs/api.pem /certs/api-key.pem
+    @metrics path /metrics
+    respond @metrics 404          # endpoint metrik tidak dibuka ke luar (dipakai di P4b)
+    reverse_proxy api:8000
+}

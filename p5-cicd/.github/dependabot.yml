@@ -1,0 +1,10 @@
+# TAMBAHAN Revisi 2: Dependabot memperbarui SHA action (beserta komentar versinya) dan pustaka Python
+# lewat pull request mingguan. Setiap PR tetap harus lolos job test sebelum digabung.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: pip
+    directory: /api
+    schedule: { interval: weekly }

@@ -1,0 +1,9 @@
+# TAMBAHAN: berkas lokal Android Studio / Gradle, tidak boleh masuk repositori.
+.idea/
+*.iml
+.gradle/
+build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/

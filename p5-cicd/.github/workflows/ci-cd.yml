@@ -1,0 +1,116 @@
+# Sumber: Modul Praktikum P5, Langkah 1-3.
+# PERUBAHAN dari modul (temuan saat menyusun kode; lihat README akar):
+#  1. Nama image dihitung otomatis dalam huruf kecil (GHCR menolak huruf besar), bukan placeholder manual.
+#  2. Di staging, replika dan resource request diperkecil: runner repositori privat hanya 2 vCPU, tidak muat
+#     3 replika x 500m CPU ditambah komponen sistem kind, sehingga `rollout status` akan timeout.
+# PERUBAHAN Revisi 2 (Oktober 2026), keamanan rantai pasok:
+#  3. Setiap action dikunci ke SHA commit penuh (tag bisa dipindah penyerang: tj-actions Maret 2025,
+#     trivy-action Maret 2026). Komentar di belakang SHA mencatat versi; Dependabot bisa memperbaruinya.
+#  4. Versi action dinaikkan ke rilis yang berjalan di Node 24 (Node 20 dihapus dari runner September 2026).
+#  5. Izin token per job (least privilege); default seluruh workflow kosong.
+#  6. Gate baru di job build: image dipindai Grype sebelum didorong; build gagal bila ada kerentanan
+#     critical yang sudah punya perbaikan. Image yang didorong membawa SBOM dan provenance.
+name: ci-cd
+on:
+  push: { branches: [main], tags: ['v*'] }
+  pull_request:
+permissions: {}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: { contents: read }
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_DB: musiwatch, POSTGRES_USER: musiwatch, POSTGRES_PASSWORD: ci-only }
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U musiwatch" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://musiwatch:ci-only@localhost:5432/musiwatch
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with: { python-version: '3.12', cache: pip }
+      - run: pip install -r api/requirements.txt -r api/requirements-dev.txt
+      - name: Kunci JWT sementara khusus CI
+        run: |
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/jwt.pem
+          openssl rsa -in /tmp/jwt.pem -pubout -out /tmp/jwt.pub
+          echo "JWT_PRIVATE_KEY_FILE=/tmp/jwt.pem" >> "$GITHUB_ENV"
+          echo "JWT_PUBLIC_KEY_FILE=/tmp/jwt.pub" >> "$GITHUB_ENV"
+      - run: psql "$DATABASE_URL" -f api/db/001_init.sql
+      - run: ruff check api && pytest -q api/tests
+
+  build:
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions: { contents: read, packages: write }
+    steps:
+      - name: Nama image huruf kecil
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/musiwatch-api" >> "$GITHUB_ENV"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build lokal untuk dipindai (belum didorong)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with: { context: api, load: true, push: false, tags: 'musiwatch-api:scan' }
+      - name: Gate pemindaian kerentanan
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: musiwatch-api:scan
+          severity-cutoff: critical
+          only-fixed: true
+          fail-build: true
+          output-format: table
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with: { registry: ghcr.io, username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}' }
+      - name: Dorong image yang sama beserta SBOM dan provenance
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: api
+          push: true
+          tags: '${{ env.IMAGE }}:${{ github.sha }}'
+          sbom: true
+          provenance: mode=max
+
+  staging:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions: { contents: read, packages: read }
+    steps:
+      - name: Nama image huruf kecil
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/musiwatch-api" >> "$GITHUB_ENV"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+        with: { cluster_name: staging }
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with: { registry: ghcr.io, username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}' }
+      - name: Muat image yang sama dari registry
+        run: |
+          docker pull $IMAGE:${{ github.sha }}
+          kind load docker-image $IMAGE:${{ github.sha }} --name staging
+      - name: Deploy
+        run: |
+          kubectl apply -f deploy/k8s/staging/          # postgres + Service db
+          ./deploy/scripts/create-staging-secrets.sh    # ConfigMap skema, kunci JWT, DATABASE_URL acak; tidak disimpan
+          kubectl apply -f deploy/k8s/api.yaml
+          kubectl set resources deployment/musiwatch-api --requests=cpu=100m,memory=128Mi
+          kubectl scale deployment/musiwatch-api --replicas=2
+          kubectl set image deployment/musiwatch-api api=$IMAGE:${{ github.sha }}
+          kubectl rollout status deployment/db --timeout=180s
+          kubectl rollout status deployment/musiwatch-api --timeout=180s
+      - name: Smoke test
+        run: |
+          kubectl port-forward svc/musiwatch-api 8080:80 >/dev/null 2>&1 &
+          sleep 5
+          curl -fsS localhost:8080/health/ready
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/v1/stations)" = "401"
+      - name: Bukti saat gagal
+        if: failure()
+        run: kubectl get pods -A && kubectl describe pods -l app=musiwatch-api && kubectl logs -l app=musiwatch-api --tail=50

@@ -1,0 +1,26 @@
+# Python
+**/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Android / Gradle
+**/.gradle/
+**/build/
+**/local.properties
+**/.idea/
+**/captures/
+**/.cxx/
+**/.externalNativeBuild/
+*.iml
+*.apk
+*.aab
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Log kerja lokal (berisi perintah mentah, bukan bagian tugas)
+# logs/ sengaja TIDAK di-ignore; lihat README sebelum push.

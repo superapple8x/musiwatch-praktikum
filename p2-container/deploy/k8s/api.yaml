@@ -1,0 +1,28 @@
+# Sumber: Bahan Ajar Contoh 5.2 + perubahan Modul Praktikum P2 Langkah 4.
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: musiwatch-api }
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: musiwatch-api } }
+  template:
+    metadata: { labels: { app: musiwatch-api } }
+    spec:
+      containers:
+      - name: api
+        image: musiwatch/api:0.2.0
+        imagePullPolicy: IfNotPresent
+        ports: [{ containerPort: 8000 }]
+        envFrom: [{ secretRef: { name: api-secret } }]
+        resources:
+          requests: { cpu: 500m, memory: 512Mi }
+          limits: { cpu: "1", memory: 1Gi }
+        readinessProbe: { httpGet: { path: /health/ready, port: 8000 } }
+        livenessProbe: { httpGet: { path: /health/live, port: 8000 } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: musiwatch-api }
+spec:
+  selector: { app: musiwatch-api }
+  ports: [{ port: 80, targetPort: 8000 }]

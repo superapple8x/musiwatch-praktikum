@@ -1,0 +1,12 @@
+# Varian pembanding P2 Langkah 2: seluruh kode disalin SEBELUM pip install,
+# sehingga perubahan satu baris kode memicu instalasi ulang dependensi.
+#   docker build -f variants/Dockerfile.nocache -t musiwatch/api:nocache .
+FROM python:3.12-slim
+WORKDIR /app
+COPY . .
+RUN pip install --no-cache-dir -r requirements.txt
+RUN useradd --create-home appuser
+USER appuser
+ENV PORT=8000
+EXPOSE 8000
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]

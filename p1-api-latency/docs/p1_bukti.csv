@@ -1,0 +1,7 @@
+file,ukuran_bita,waktu_berkas,latar,sha256_16,isi_yang_terlihat
+01_layar_awal.png,78637,2026-11-10 09:57:59,layar awal,a03aef6314c941cd,"Chip `langsung :8000` aktif, base http://10.0.2.2:8000, status 'Belum dijalankan.', tombol Muat 50 dan Uji /v1/flaky 20x"
+02_muat_50_langsung.png,100998,2026-11-10 10:18:20,full (langsung),484eb5f05092b326,"50 stasiun: 3 ms (TTFB 3 ms), 13358 bita, 50 item, pemanasan 503 ms, base http://10.0.2.2:8000"
+03_flaky_retry_langsung.png,130537,2026-11-10 10:19:09,retry (langsung),5c2d5432fa69deb8,"tanpa retry: sukses 15/20, gagal 5, total 3003 ms; dengan retry: sukses 20/20, gagal 0, total 8094 ms"
+04_muat_50_proksi_edge.png,131301,2026-11-10 10:19:21,edge (proksi),999031a68ef15bc3,"Chip `proksi :9000` aktif, 50 stasiun: 473 ms (TTFB 247 ms), 13358 bita, 50 item, pemanasan 505 ms, base http://10.0.2.2:9000"
+05_muat_50_proksi_hsdpa.png,101303,2026-11-10 10:24:44,hsdpa (proksi),f5c24f529532200d,"Chip `proksi :9000` aktif, 50 stasiun: 128 ms (TTFB 120 ms), 13358 bita, 50 item, pemanasan 507 ms, base http://10.0.2.2:9000; layar di-restart dulu sehingga tidak ada teks uji flaky yang terbawa"
+06_muat_50_proksi_full.png,101147,2026-11-10 10:30:22,full (proksi),a32eb86dc9e8704d,"Chip `proksi :9000` aktif, 50 stasiun: 4 ms (TTFB 4 ms), 13358 bita, 50 item, pemanasan 503 ms, base http://10.0.2.2:9000; kontrol: full lewat proksi sama cepatnya dengan langsung :8000 (02), jadi proksi tidak menambah latensi"
