@@ -24,3 +24,6 @@ __pycache__/
 
 # Log kerja lokal (berisi perintah mentah, bukan bagian tugas)
 # logs/ sengaja TIDAK di-ignore; lihat README sebelum push.
+
+# Log kerja lokal (riwayat perintah, bukan bagian tugas)
+logs/
