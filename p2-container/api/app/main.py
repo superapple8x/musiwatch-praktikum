@@ -43,3 +43,4 @@ def live():
 def ready():
     # versi awal; di Praktik 3 diganti dengan pemeriksaan koneksi database
     return {"status": "ready", "db_configured": bool(DATABASE_URL)}
+# test cache
