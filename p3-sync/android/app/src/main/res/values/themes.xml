@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- TAMBAHAN: tema minimal. Compose menggambar sendiri; tema ini hanya dipakai sebelum
+         setContent() agar splash tidak putih polos. -->
+    <style name="Theme.MusiWatch" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
