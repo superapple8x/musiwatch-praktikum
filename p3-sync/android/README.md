@@ -1,44 +1,23 @@
-# Klien Android - kerangka (P1)
+# Klien Android - MusiWatch P3
 
-Status: KERANGKA. File Kotlin di sini belum dikompilasi; masukkan ke proyek Android Studio
-(Empty Activity, Kotlin, minSdk 24, compileSdk 36, targetSdk 36) lalu sesuaikan nama paket.
+Buka folder `p3-sync/android` di Android Studio. Proyek memakai minSdk 24 dan
+compileSdk/targetSdk 36. Versi Room, WorkManager, KSP, dan Kotlin serialization
+ada di `gradle/libs.versions.toml`.
 
-Dependensi `app/build.gradle.kts`:
+Jalankan API P3 pada port 8000 dan buka aplikasi di emulator. Aplikasi
+mengakses port tersebut melalui `http://10.0.2.2:8000`.
 
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+1. Aktifkan mode pesawat dan pastikan Wi-Fi mati. Masukkan pH dan simpan
+   pengukuran. Daftar menampilkan `PENDING`.
+2. Tutup lalu buka kembali aplikasi. Pengukuran `PENDING` tetap tampil dari Room.
+3. Pulihkan jaringan. WorkManager mengirim pengukuran dan status berubah
+   menjadi `SYNCED`. Gunakan **Sinkronkan sekarang** untuk meminta pull segera
+   setelah ada perubahan dari klien lain.
+4. Untuk memeriksa konflik, ubah pengukuran `SYNCED` saat offline, lalu ubah
+   versi yang sama di server sebelum memulihkan jaringan. Status `CONFLICT`
+   menandai bahwa perubahan lokal masih tersimpan.
+5. Untuk memeriksa penghapusan, kirim tombstone ke server untuk pengukuran
+   `SYNCED`. Setelah pull, pengukuran hilang dari daftar.
 
-AndroidManifest.xml:
-
-    <uses-permission android:name="android.permission.INTERNET" />
-    <application android:networkSecurityConfig="@xml/network_security_config" ... >
-
-Layar praktik cukup dua tombol: "Muat 50 stasiun" (tampilkan durasi) dan
-"Uji /v1/flaky 20x" dengan dan tanpa retry (tampilkan jumlah sukses/gagal dan durasi).
-Panggil fungsi di HttpClients.kt dari lifecycleScope/viewModelScope.
-
-## Tambahan untuk P3
-
-Dependensi tambahan:
-
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")          // butuh plugin com.google.devtools.ksp
-    implementation("androidx.work:work-runtime-ktx:2.9.1")
-    // plugin: id("org.jetbrains.kotlin.plugin.serialization")
-
-Alur: layar simpan -> dao.upsert(entity PENDING) -> requestSyncNow(context).
-Daftar pengukuran: dao.observeAll() dan tampilkan ikon dari kolom syncState.
-
-## Catatan versi (Revisi 2, Oktober 2026)
-
-- Sejak 31 Agustus 2026 Google Play mewajibkan aplikasi baru dan pembaruan menargetkan API 36 (Android 16),
-  jadi proyek praktik memakai compileSdk dan targetSdk 36 dan emulator dengan image API 36.
-  Android 17 (API 37) sudah stabil sejak Juni 2026; boleh dipakai untuk emulator, tidak wajib.
-- Target API 35 ke atas memaksa tampilan edge-to-edge. Untuk layar praktik yang sederhana cukup panggil
-  `enableEdgeToEdge()` dan beri padding dari `WindowInsets` agar tombol tidak tertutup status bar.
-- Versi pustaka di atas adalah versi yang dipakai saat modul disusun. Android Studio akan menyarankan versi
-  lebih baru; terima saran itu, lalu catat versi akhir di laporan. OkHttp 4.12 dipertahankan agar cocok dengan
-  teks modul. OkHttp 5.x sudah stabil, tetapi uji dulu sebelum pindah karena struktur artefaknya berubah.
-
+Kontrol latensi P1 masih tersedia di bawah daftar pengukuran. Pilih port 8000
+untuk jalur langsung atau port 9000 jika proksi throttle sedang berjalan.

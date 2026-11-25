@@ -19,8 +19,14 @@ abstract class MeasurementDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun upsert(e: MeasurementEntity)
 
-    @Query("SELECT * FROM measurements WHERE syncState = 'PENDING'")
+    @Query("SELECT * FROM measurements WHERE syncState = 'PENDING' ORDER BY measuredAt, id LIMIT 500")
     abstract suspend fun pending(): List<MeasurementEntity>
+
+    @Query("""
+        UPDATE measurements SET ph = :ph, note = :note, syncState = 'PENDING'
+        WHERE id = :id AND version = :version AND syncState = 'SYNCED' AND deleted = 0
+    """)
+    abstract suspend fun queueEdit(id: String, version: Int, ph: Double, note: String?): Int
 
     @Query("SELECT * FROM measurements WHERE id = :id")
     abstract suspend fun byId(id: String): MeasurementEntity?

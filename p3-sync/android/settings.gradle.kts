@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MusiWatch P1"
+rootProject.name = "MusiWatch P3"
 include(":app")

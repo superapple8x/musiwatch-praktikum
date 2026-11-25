@@ -1,4 +1,4 @@
-# Sumber: Modul Praktikum P2, Langkah 2 (verbatim)
+# Sumber: Modul Praktikum P2, Langkah 2
 FROM python:3.12-slim
 WORKDIR /app
 COPY requirements.txt .
@@ -8,4 +8,4 @@ RUN useradd --create-home appuser
 USER appuser
 ENV PORT=8000
 EXPOSE 8000
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
